@@ -63,6 +63,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>hello-myo</TargetName>
+    <IncludePath>C:\Users\Luke\Documents\MyoSDK\myo-sdk-win-0.9.0\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -88,7 +89,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>myo64.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\Luke\Documents\MyoSDK\myo-sdk-win-0.9.0\lib\myo64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -164,6 +165,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="hello-myo.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="headers\myo.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

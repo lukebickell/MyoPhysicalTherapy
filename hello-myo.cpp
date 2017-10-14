@@ -6,7 +6,9 @@
 #include <iomanip>
 #include <stdexcept>
 #include <string>
+#include <vector>
 #include <algorithm>
+#include <time.h>
 
 // The only file that needs to be included to use the Myo C++ SDK is myo.hpp.
 #include <myo/myo.hpp>
@@ -75,7 +77,7 @@ public:
         } else {
             // Tell the Myo to stay unlocked only for a short period. This allows the Myo to stay unlocked while poses
             // are being performed, but lock after inactivity.
-            myo->unlock(myo::Myo::unlockTimed);
+            //myo->unlock(myo::Myo::unlockTimed);
         }
     }
 
@@ -155,13 +157,82 @@ public:
     int roll_w, pitch_w, yaw_w;
     myo::Pose currentPose;
 };
-
-class GestureDetector
+struct EulerAngle
+{
+	int roll = 0;
+	int pitch = 0;
+	int yaw = 0;
+};
+class Gesture
 {
 public:
-	GestureDetector(myo::Myo*, myo::Hub*, DataCollector*)
+	std::vector<EulerAngle>* values;
+	bool equals(Gesture* gesture)
 	{
+		if (std::abs(this->values->size() - gesture->values->size) > 5)
+			return false;
 
+
+	}
+};
+class GestureRecorder
+{
+private:
+	myo::Myo* myo;
+	myo::Hub* hub;
+	DataCollector* collector;
+
+public:
+	Gesture * lastGesture;
+	GestureRecorder(myo::Myo* myo, myo::Hub* hub, DataCollector* collector)
+	{
+		this->myo = myo;
+		this->hub = hub;
+		this->collector = collector;
+		hub->addListener(collector);
+		lastGesture = new Gesture();
+	}
+
+	void record()
+	{
+		lastGesture = new Gesture;
+		lastGesture->values = new std::vector<EulerAngle>();
+		EulerAngle lastAngle;
+
+		while (true)
+		{
+			EulerAngle newAngle = lastAngle;
+			hub->run(1000 / 50);
+			if (collector->currentPose == myo::Pose::doubleTap)
+			{
+				break;
+			}
+			if (lastAngle.pitch == collector->pitch_w && lastAngle.roll == collector->roll_w && lastAngle.yaw == collector->yaw_w)
+			{
+				continue;
+			}
+
+			newAngle.pitch = collector->pitch_w;
+			newAngle.roll = collector->roll_w;
+			newAngle.yaw = collector->yaw_w;
+
+			std::cout << "\r[R: " << newAngle.roll << "][P: " << newAngle.pitch << "][Y: " << newAngle.yaw << "]\n";
+
+			lastGesture->values->push_back(newAngle);
+			
+			std::cout << '\r' << collector->currentPose.toString();
+			
+			lastAngle = newAngle;
+		}
+	}
+
+	void printLastGesture()
+	{
+		for (int i = 0; i < lastGesture->values->size(); i++)
+		{
+			EulerAngle angle = lastGesture->values->at(i);
+			std::cout << "\nR: " << angle.roll << " P: " << angle.pitch << " Y: " << angle.yaw;
+		}
 	}
 
 };
@@ -173,7 +244,7 @@ int main(int argc, char** argv)
 
     // First, we create a Hub with our application identifier. Be sure not to use the com.example namespace when
     // publishing your application. The Hub provides access to one or more Myos.
-    myo::Hub hub("com.example.hello-myo");
+    myo::Hub *hub = new myo::Hub("com.example.hello-myo");
 
     std::cout << "Attempting to find a Myo..." << std::endl;
 
@@ -181,7 +252,7 @@ int main(int argc, char** argv)
     // immediately.
     // waitForMyo() takes a timeout value in milliseconds. In this case we will try to find a Myo for 10 seconds, and
     // if that fails, the function will return a null pointer.
-    myo::Myo* myo = hub.waitForMyo(10000);
+    myo::Myo* myo = hub->waitForMyo(10000);
 
     // If waitForMyo() returned a null pointer, we failed to find a Myo, so exit with an error message.
     if (!myo) {
@@ -192,41 +263,51 @@ int main(int argc, char** argv)
     std::cout << "Connected to a Myo armband!" << std::endl << std::endl;
 
     // Next we construct an instance of our DeviceListener, so that we can register it with the Hub.
-    DataCollector collector;
+	DataCollector * collector = new DataCollector();
 
     // Hub::addListener() takes the address of any object whose class inherits from DeviceListener, and will cause
     // Hub::run() to send events to all registered device listeners.
-    hub.addListener(&collector);
-	hub.run(1000/20);
-	int startingPitch = collector.pitch_w;
-	std::cout << startingPitch << '\n';
-    // Finally we enter our main loop.
-	bool topCurl = false;
-	int reps = 0;
-    while (1) {
-        // In each iteration of our main loop, we run the Myo event loop for a set number of milliseconds.
-        // In this case, we wish to update our display 20 times a second, so we run for 1000/20 milliseconds.
-        hub.run(1000/20);
-		int currentPitch = collector.pitch_w;
-		if (currentPitch >= startingPitch + 7)
-		{
-			//std::cout << '\n\r' << "completed top rep";
-			topCurl = true;
-		}
-		if (topCurl && currentPitch <= startingPitch)
-		{
-			reps++;
-			topCurl = false;
-			try {
-				myo->vibrate(myo::Myo::vibrationShort);
-			} catch (std::exception& e)
-			{ }
-			std::cout << '\n' << reps << " rep(s) completed!" << '\n';
-		}
-        // After processing events, we call the print() member function we defined above to print out the values we've
-        // obtained from any events that have occurred.
-        collector.print();
-    }
+ //   hub.addListener(&collector);
+	//hub.run(1000/20);
+	//int startingPitch = collector.pitch_w;
+	//std::cout << startingPitch << '\n';
+ //   // Finally we enter our main loop.
+	//bool topCurl = false;
+	//int reps = 0;
+ //   while (1) {
+ //       // In each iteration of our main loop, we run the Myo event loop for a set number of milliseconds.
+ //       // In this case, we wish to update our display 20 times a second, so we run for 1000/20 milliseconds.
+ //       hub.run(1000/20);
+	//	int currentPitch = collector.pitch_w;
+	//	if (currentPitch >= startingPitch + 7)
+	//	{
+	//		//std::cout << '\n\r' << "completed top rep";
+	//		topCurl = true;
+	//	}
+	//	if (topCurl && currentPitch <= startingPitch)
+	//	{
+	//		reps++;
+	//		topCurl = false;
+	//		try {
+	//			myo->vibrate(myo::Myo::vibrationShort);
+	//		} catch (std::exception& e)
+	//		{ }
+	//		std::cout << '\n' << reps << " rep(s) completed!" << '\n';
+	//	}
+ //       // After processing events, we call the print() member function we defined above to print out the values we've
+ //       // obtained from any events that have occurred.
+ //       collector.print();
+ //   }
+
+	GestureRecorder * recorder = new GestureRecorder(myo, hub, collector);
+	GestureRecorder * tester = new GestureRecorder(myo, hub, collector);
+	while (true)
+	{
+		recorder->record();
+		recorder->printLastGesture();
+	}
+	
+	
 
     // If a standard exception occurred, we print out its message and exit.
     } catch (const std::exception& e) {
