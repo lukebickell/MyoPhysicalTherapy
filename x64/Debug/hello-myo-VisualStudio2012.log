@@ -1,5 +1,2 @@
-﻿  hello-myo-VisualStudio2012.vcxproj -> C:\Users\Luke\Documents\MyoSDK\MyoPhysicalTherapy\x64\Debug\hello-myo.exe
-  The system cannot find the path specified.
-C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppCommon.targets(133,5): error MSB3073: The command "COPY "..\bin\myo64.dll" "C:\Users\Luke\Documents\MyoSDK\MyoPhysicalTherapy\x64\Debug\"
-C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppCommon.targets(133,5): error MSB3073:       
-C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppCommon.targets(133,5): error MSB3073: :VCEnd" exited with code 1.
+﻿  hello-myo.cpp
+hello-myo.cpp(14): fatal error C1083: Cannot open include file: 'myo/myo.hpp': No such file or directory

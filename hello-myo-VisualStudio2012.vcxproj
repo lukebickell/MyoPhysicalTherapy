@@ -63,7 +63,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>hello-myo</TargetName>
-    <IncludePath>C:\Users\Luke\Documents\MyoSDK\myo-sdk-win-0.9.0\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Sana\Documents\MyoSDK\myo-sdk-win-0.9.0\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
