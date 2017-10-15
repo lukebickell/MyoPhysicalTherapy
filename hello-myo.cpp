@@ -9,6 +9,7 @@
 #include <vector>
 #include <algorithm>
 #include <time.h>
+#include <map>
 
 // The only file that needs to be included to use the Myo C++ SDK is myo.hpp.
 #include <myo/myo.hpp>
@@ -275,12 +276,14 @@ public:
 			{
 				break;
 			}
+			/*
 			if (collector->currentPose == myo::Pose::waveOut)
 			{
 				minorChange = false;
 				std::cout << "Reset" << std::endl;
 				reset();
 			}
+			*/
 			if (lastAngle.pitch == collector->pitch_w && lastAngle.roll == collector->roll_w && lastAngle.yaw == collector->yaw_w)
 			{
 				minorChange = false;
@@ -315,9 +318,8 @@ public:
 		}
 	}
 
-	Gesture * saveGesture()
+	Gesture * getGesture()
 	{
-		std::cout << "Gesture saved!" << std::endl;
 		return lastGesture;
 	}
 
@@ -381,6 +383,59 @@ public:
 			{
 				correct = 0;
 				strikes = 0;
+			}
+			else
+			{
+				strikes++;
+			}
+
+			//std::cout << '\r' << collector->currentPose.toString();
+
+			lastAngle = newAngle;
+		}
+		return true;
+	}
+	/*
+	std::string isGesture(std::map<std::string>, Gesture * gesture>)
+	{
+		EulerAngle lastAngle;
+		int correct = 0;
+		int numSteps = gesture->getNumSteps();
+		int strikes = 0;
+		bool minorChange = false;
+		while (correct < numSteps)
+		{
+			if (collector->currentPose == myo::Pose::waveOut)
+			{
+				break;
+			}
+			EulerAngle newAngle = lastAngle;
+			hub->run(1000 / FREQUENCY);
+			if (lastAngle.pitch == collector->pitch_w && lastAngle.roll == collector->roll_w && lastAngle.yaw == collector->yaw_w)
+			{
+				minorChange = false;
+				continue;
+			}
+			if (std::abs(lastAngle.pitch - collector->pitch_w) <= 1 && std::abs(lastAngle.roll - collector->roll_w) <= 1 && std::abs(lastAngle.yaw - collector->yaw_w) <= 1 && minorChange)
+			{
+				minorChange = true;
+				continue;
+			}
+			minorChange = false;
+			newAngle.pitch = collector->pitch_w;
+			newAngle.roll = collector->roll_w;
+			newAngle.yaw = collector->yaw_w;
+
+			std::cout << "\r[R: " << newAngle.roll << "][P: " << newAngle.pitch << "][Y: " << newAngle.yaw << "]";
+
+			if (gesture->equals(newAngle, correct))
+			{
+				correct++;
+			}
+			else if (strikes >= MAX_STRIKES)
+			{
+				correct = 0;
+				strikes = 0;
 				std::cout << "RESET" << std::endl;
 			}
 			else
@@ -395,7 +450,7 @@ public:
 		}
 		return true;
 	}
-
+	*/
 	void printLastGesture()
 	{
 		for (int i = 0; i < lastGesture->values->size(); i++)
@@ -405,6 +460,32 @@ public:
 		}
 	}
 
+};
+
+class Gestures
+{
+public:
+	std::map<std::string, Gesture*> gest;
+	std::string keyAt(int n)
+	{
+		int i = 0;
+		for (std::map<std::string, Gesture*>::const_iterator it = gest.begin(); it != gest.end(); ++it)
+		{
+			if (i == n)
+			{
+				return it->first;
+			}
+		}
+	}
+	int getSize()
+	{
+		int i = 0;
+		for (std::map<std::string, Gesture*>::const_iterator it = gest.begin(); it != gest.end(); ++it)
+		{
+			i++;
+		}
+		return i;
+	}
 };
 
 int main(int argc, char** argv)
@@ -434,51 +515,71 @@ int main(int argc, char** argv)
 
 		// Next we construct an instance of our DeviceListener, so that we can register it with the Hub.
 		DataCollector * collector = new DataCollector();
-
-		// Hub::addListener() takes the address of any object whose class inherits from DeviceListener, and will cause
-		// Hub::run() to send events to all registered device listeners.
-		//   hub.addListener(&collector);
-		//hub.run(1000/20);
-		//int startingPitch = collector.pitch_w;
-		//std::cout << startingPitch << '\n';
-		//   // Finally we enter our main loop.
-		//bool topCurl = false;
-		//int reps = 0;
-		//   while (1) {
-		//       // In each iteration of our main loop, we run the Myo event loop for a set number of milliseconds.
-		//       // In this case, we wish to update our display 20 times a second, so we run for 1000/20 milliseconds.
-		//       hub.run(1000/20);
-		//	int currentPitch = collector.pitch_w;
-		//	if (currentPitch >= startingPitch + 7)
-		//	{
-		//		//std::cout << '\n\r' << "completed top rep";
-		//		topCurl = true;
-		//	}
-		//	if (topCurl && currentPitch <= startingPitch)
-		//	{
-		//		reps++;
-		//		topCurl = false;
-		//		try {
-		//			myo->vibrate(myo::Myo::vibrationShort);
-		//		} catch (std::exception& e)
-		//		{ }
-		//		std::cout << '\n' << reps << " rep(s) completed!" << '\n';
-		//	}
-		//       // After processing events, we call the print() member function we defined above to print out the values we've
-		//       // obtained from any events that have occurred.
-		//       collector.print();
-		//   }
+		GestureRecorder * recorder = new GestureRecorder(myo, hub, collector);
+		GestureListener * listener = new GestureListener(myo, hub, collector);
+		Gestures gestures;
 
 		while (true)
 		{
-			GestureRecorder * recorder = new GestureRecorder(myo, hub, collector);
-			recorder->record();
-			Gesture * gesture1 = recorder->saveGesture();
-			delete recorder;
+			std::cout << "\n1. Therapist - Record a gesture \n2. Patient - Perform reps of a gesture" << std::endl;
+			int inputNum;
+			char saveChar;
+			std::cin >> inputNum;
 
-			GestureListener * listener = new GestureListener(myo, hub, collector);
-			std::cout << listener->isGesture(gesture1);
-			delete listener;
+			// Record gesture
+			if (inputNum == 1) {
+				recorder->record();
+				std::cout << "Do you want to save (Y/N)? ";
+				std::cin >> saveChar;
+				while (saveChar != 'Y' && saveChar != 'N' && saveChar != 'y' && saveChar != 'n')
+				{
+					std::cout << "Invalid!" << std::endl;
+					std::cin >> saveChar;
+				}
+				if (saveChar == 'Y' || saveChar == 'y')
+				{
+					std::cout << "\nGesture recorded! Enter a name for the gesture: " << std::endl;
+					std::string name;
+					std::cin >> name;
+
+					gestures.gest[name] = recorder->getGesture();
+					std::cout << "\nGesture " << name << " saved!" << std::endl;
+				}
+				else
+				{
+					std::cout << "\nGesture discarded!" << std::endl;
+				}
+			}
+			else if (inputNum == 2)
+			{
+				int input = 0;
+				int totalReps = 0;
+				int reps = 0;
+
+				for (int i = 0; i < gestures.getSize(); i++)
+				{
+					std::cout << i+1 << ". " << gestures.keyAt(i) << std::endl;
+				}
+				std::cin >> input;
+				while (input > gestures.getSize()+1)
+				{
+					std::cout << "Incorrect input!" << std::endl;
+					std::cin >> input;
+				}
+				//Sorry for the sloppy code. It's 6:14am...
+				std::cout << "How many reps would you like to perform? ";
+				std::cin >> totalReps;
+				while (reps <= totalReps)
+				{
+					std::cout << "Reps: " << reps << " / " << totalReps << std::endl;
+					listener->isGesture(gestures.gest[gestures.keyAt(input - 1)]);
+					reps++;
+				}
+			}
+			else {
+				std::cout << "Incorrect input!" << std::endl;
+				continue;
+			}
 		}
 
 
